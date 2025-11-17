@@ -1,0 +1,8 @@
+/.venv/
+.venv/
+# Common Python ignores
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
