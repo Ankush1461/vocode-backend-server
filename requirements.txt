@@ -1,4 +1,5 @@
 fastapi
 uvicorn
-openai-whisper
 python-multipart
+numpy
+pydub

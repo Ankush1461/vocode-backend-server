@@ -46,3 +46,30 @@ def walk_size(path):
     return total/1024/1024
 print("site-packages size (MB):", round(walk_size(sp),2))
 PY
+
+# 8) Build or download whisper.cpp and a small ggml model for local transcription (whisper.cpp)
+# This avoids installing heavy Python whisper packages and torch on Render.
+mkdir -p whisper.cpp/models
+
+# Download the tiny ggml model if not present
+if [ ! -f whisper.cpp/models/ggml-tiny.bin ]; then
+  echo "Downloading ggml-tiny model..."
+  wget -q -O whisper.cpp/models/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/models/ggml-tiny.bin || true
+fi
+
+# Try to build whisper.cpp native library if libwhisper.so is not present
+if [ ! -f whisper.cpp/libwhisper.so ]; then
+  echo "Building whisper.cpp native library..."
+  # clone shallow to /tmp and build
+  rm -rf /tmp/whisper.cpp || true
+  git clone --depth 1 https://github.com/ggerganov/whisper.cpp /tmp/whisper.cpp || true
+  if [ -d /tmp/whisper.cpp ]; then
+    (cd /tmp/whisper.cpp && make -j"$(nproc)") && cp /tmp/whisper.cpp/libwhisper.so whisper.cpp/ || true
+  fi
+fi
+
+# If build failed and no lib is present, warn but continue (app will fallback)
+if [ ! -f whisper.cpp/libwhisper.so ]; then
+  echo "Warning: libwhisper.so not found. You can provide a prebuilt lib or set OPENAI_API_KEY to use hosted Whisper."
+fi
+
